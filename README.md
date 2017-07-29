@@ -7,7 +7,7 @@ Page click statistic. Using redis as data backend.
     go get -u github.com/weaming/cute
     cute -h
 
-Visit http://127.0.0.1:8080/click to add record.
+Visit `http://127.0.0.1:8080/click?host=<host>&uri=<uri>` to add record.
 
 Visit http://127.0.0.1:8080 to view global statistics.
 

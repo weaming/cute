@@ -126,8 +126,20 @@ func (p *Click) save(pool *redis.Pool) int64 {
 
 func OnClick(w rest.ResponseWriter, r *rest.Request) {
 	// site
-	host := r.Host
-	uri := r.RequestURI
+	q := r.URL.Query()
+	var host, uri string
+	if hosts, ok := q["host"]; ok {
+		host = hosts[0]
+	}
+	if uris, ok := q["uri"]; ok {
+		uri = uris[0]
+	}
+	if host == "" || uri == "" {
+		w.WriteHeader(400)
+		w.WriteJson(map[string]string{"error": "missing query parameter host or uri"})
+		return
+	}
+
 	// client
 	ip := strings.SplitN(r.RemoteAddr, ":", 2)[0]
 
