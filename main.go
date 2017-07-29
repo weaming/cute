@@ -9,6 +9,7 @@ import (
 	"gopkg.in/redsync.v1"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var (
@@ -43,6 +44,7 @@ type Stat struct {
 	Browser       int64 `json:"browser"`
 	OS            int64 `json:"os"`
 	Platform      int64 `json:"platform"`
+	IP            int64 `json:"ip"`
 }
 
 func (p *Click) save(pool *redis.Pool) int64 {
@@ -88,12 +90,14 @@ func (p *Click) save(pool *redis.Pool) int64 {
 	c.Send("HINCRBY", p.Host, "browser:"+p.Browser, 1)
 	c.Send("HINCRBY", p.Host, "os:"+p.OS, 1)
 	c.Send("HINCRBY", p.Host, "platform:"+p.Platform, 1)
+	c.Send("HINCRBY", p.Host, "ip:"+p.IP, 1)
 	// global
 	c.Send("HINCRBY", "global", "total", 1) // 6
 	c.Send("HINCRBY", "global", "family:"+p.BrowserFamily, 1)
 	c.Send("HINCRBY", "global", "browser:"+p.Browser, 1)
 	c.Send("HINCRBY", "global", "os:"+p.OS, 1)
 	c.Send("HINCRBY", "global", "platform:"+p.Platform, 1)
+	c.Send("HINCRBY", "global", "ip:"+p.IP, 1)
 
 	r, err := c.Do("EXEC")
 	if err == nil {
@@ -109,6 +113,7 @@ func (p *Click) save(pool *redis.Pool) int64 {
 			p.Click.Browser = r[3].(int64)
 			p.Click.OS = r[4].(int64)
 			p.Click.Platform = r[5].(int64)
+			p.Click.IP = r[6].(int64)
 
 			return p.Click.URI
 		}
@@ -124,7 +129,7 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 	host := r.Host
 	uri := r.RequestURI
 	// client
-	ip := r.RemoteAddr
+	ip := strings.SplitN(r.RemoteAddr, ":", 2)[0]
 
 	c := Click{
 		Host: host,
