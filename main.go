@@ -6,8 +6,10 @@ import (
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/garyburd/redigo/redis"
 	"github.com/mssola/user_agent"
+	"github.com/weaming/cute/qqwry"
 	"gopkg.in/redsync.v1"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -15,15 +17,17 @@ import (
 var (
 	listen      = flag.String("listen", ":8080", "listen [host]:port")
 	redisServer = flag.String("redis", "127.0.0.1:6379", "redis host:port")
-	headerIPKey = flag.String("header", "X-Real-IP", "key of IP HTTP header in proxy")
+	xRealIP     = flag.String("header", "X-Real-IP", "key of IP in proxy HTTP header")
 	redisDB     = flag.Int("db", 0, "redis database")
+	datFile     = flag.String("qqwry", "./qqwry.dat", "纯真 IP 库的数据文件路径")
 	Pool        = NewRedisPool(*redisServer, "", *redisDB, 20)
 )
 
 type Click struct {
-	Host string `json:"host"`
-	URI  string `json:"uri"`
-	IP   string `json:"ip"`
+	Host       string            `json:"host"`
+	URI        string            `json:"uri"`
+	IP         string            `json:"ip"`
+	IPLocation qqwry.ResultQQwry `json:"location"`
 
 	uaRaw string
 	ua    *user_agent.UserAgent
@@ -125,6 +129,17 @@ func (p *Click) save(pool *redis.Pool) int64 {
 	}
 }
 
+func getConnectIP(r *rest.Request) (ip string) {
+	if strings.Contains(r.RemoteAddr, "[") {
+		// IPv6
+		ip = "ipv6"
+	} else {
+		// IPv4
+		ip = strings.SplitN(r.RemoteAddr, ":", 2)[0]
+	}
+	return ip
+}
+
 func OnClick(w rest.ResponseWriter, r *rest.Request) {
 	// site
 	q := r.URL.Query()
@@ -142,19 +157,27 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	// client
-	var ip string
-	headerIP := r.Header.Get(*headerIPKey)
-	connectIP := strings.SplitN(r.RemoteAddr, ":", 2)[0]
-	if headerIP == "" {
-		ip = connectIP
+	ip := r.Header.Get(*xRealIP)
+	if ip == "" {
+		// get from connect
+		ip = getConnectIP(r)
 	} else {
-		ip = headerIP
+		// get from http header
+		if x := net.ParseIP(ip); x != nil {
+			ip = x.String()
+		} else {
+			log.Fatal("proxy ip format invalid")
+		}
 	}
 
+	qq := qqwry.NewQQwry()
+	location := qq.Find(ip)
+
 	c := Click{
-		Host: host,
-		URI:  uri,
-		IP:   ip,
+		Host:       host,
+		URI:        uri,
+		IP:         ip,
+		IPLocation: location,
 	}
 	c.uaRaw = r.UserAgent()
 
@@ -189,6 +212,8 @@ func Index(w rest.ResponseWriter, r *rest.Request) {
 
 func init() {
 	flag.Parse()
+	// load qqwry data to memory
+	qqwry.IPData.InitIPData(*datFile)
 }
 
 func main() {
