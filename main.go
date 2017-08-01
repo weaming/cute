@@ -15,6 +15,7 @@ import (
 var (
 	listen      = flag.String("listen", ":8080", "listen [host]:port")
 	redisServer = flag.String("redis", "127.0.0.1:6379", "redis host:port")
+	headerIPKey = flag.String("header", "X-Real-IP", "key of IP HTTP header in proxy")
 	redisDB     = flag.Int("db", 0, "redis database")
 	Pool        = NewRedisPool(*redisServer, "", *redisDB, 20)
 )
@@ -141,7 +142,14 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 	}
 
 	// client
-	ip := strings.SplitN(r.RemoteAddr, ":", 2)[0]
+	var ip string
+	headerIP := r.Header.Get(*headerIPKey)
+	connectIP := strings.SplitN(r.RemoteAddr, ":", 2)[0]
+	if headerIP == "" {
+		ip = connectIP
+	} else {
+		ip = headerIP
+	}
 
 	c := Click{
 		Host: host,
