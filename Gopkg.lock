@@ -20,6 +20,12 @@
   version = "v0.4.1"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/text"
+  packages = ["encoding","encoding/internal","encoding/internal/identifier","encoding/simplifiedchinese","internal/gen","transform","unicode/cldr"]
+  revision = "3bd178b88a8180be2df394a1fbb81313916f0e7b"
+
+[[projects]]
   name = "gopkg.in/redsync.v1"
   packages = ["."]
   revision = "98dabdf1c8574561bf976911c14ff652c47b1ddf"
@@ -28,6 +34,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "58ad0199a6859b0f682da9c847be7cf0c8ed6d95199d0b5bd2a50a1b9fa13357"
+  inputs-digest = "567f65fb244af264219a71e83a478fd443df945db82f859359ed3351134cc4f3"
   solver-name = "gps-cdcl"
   solver-version = 1
