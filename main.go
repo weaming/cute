@@ -187,16 +187,7 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 }
 
 func IPQuery(w rest.ResponseWriter, r *rest.Request) {
-	q := r.URL.Query()
-	var ip string
-	if i, ok := q["ip"]; ok {
-		ip = i[0]
-	}
-	//else {
-	//	w.WriteHeader(400)
-	//	w.WriteJson(map[string]string{"error": "missing query parameter ip"})
-	//	return
-	//}
+	ip := r.PathParam("ip")
 
 	// get IP from tcp or http headers
 	if ip == "" {
@@ -264,8 +255,8 @@ func main() {
 	})
 	if router, err := rest.MakeRouter(
 		rest.Get("/click", OnClick),
-		rest.Get("/ip", IPQuery),
-		rest.Get("/#host", Index),
+		rest.Get("/ip/#ip", IPQuery),
+		rest.Get("/host/#host", Index),
 		rest.Get("/", Index),
 	); err != nil {
 		log.Fatal(err)
