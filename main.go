@@ -136,8 +136,9 @@ func getConnectIP(r *rest.Request) (ip string) {
 	} else {
 		// IPv4
 		ip = strings.SplitN(r.RemoteAddr, ":", 2)[0]
+		return ip
 	}
-	return ip
+	return ""
 }
 
 func OnClick(w rest.ResponseWriter, r *rest.Request) {
@@ -166,7 +167,7 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 		if x := net.ParseIP(ip); x != nil {
 			ip = x.String()
 		} else {
-			log.Fatal("proxy ip format invalid")
+			log.Fatal("proxy ip format invalid: " + ip)
 		}
 	}
 
@@ -183,6 +184,37 @@ func OnClick(w rest.ResponseWriter, r *rest.Request) {
 
 	c.save(Pool)
 	w.WriteJson(c)
+}
+
+func IPQuery(w rest.ResponseWriter, r *rest.Request) {
+	q := r.URL.Query()
+	var ip string
+	if i, ok := q["ip"]; ok {
+		ip = i[0]
+	}
+	//else {
+	//	w.WriteHeader(400)
+	//	w.WriteJson(map[string]string{"error": "missing query parameter ip"})
+	//	return
+	//}
+
+	// get IP from tcp or http headers
+	if ip == "" {
+		// get from connect
+		ip = getConnectIP(r)
+	}
+	if ip == "" || ip == "ipv6" {
+		// get from http header
+		if x := net.ParseIP(ip); x != nil {
+			ip = x.String()
+		} else {
+			log.Fatal("proxy ip format invalid: " + ip)
+		}
+	}
+
+	qq := qqwry.NewQQwry()
+	location := qq.Find(ip)
+	w.WriteJson(location)
 }
 
 func Index(w rest.ResponseWriter, r *rest.Request) {
@@ -232,6 +264,7 @@ func main() {
 	})
 	if router, err := rest.MakeRouter(
 		rest.Get("/click", OnClick),
+		rest.Get("/ip", IPQuery),
 		rest.Get("/#host", Index),
 		rest.Get("/", Index),
 	); err != nil {
