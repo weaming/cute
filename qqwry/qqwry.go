@@ -93,7 +93,7 @@ func (q *QQwry) SetOffset(offset int64) {
 
 // Find ip地址查询对应归属地信息
 func (q *QQwry) Find(ip string) (res ResultQQwry) {
-	res = ResultQQwry{}
+	res = ResultQQwry{IP: ip}
 
 	//res.IP = ip
 	if strings.Count(ip, ".") != 3 {
