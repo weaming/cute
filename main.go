@@ -191,36 +191,19 @@ func IPQuery(w rest.ResponseWriter, r *rest.Request) {
 
 	// get IP from tcp or http headers
 	if ip == "" {
-		// get from connect
-		ip = getConnectIP(r)
-	}
-	if ip == "" || ip == "ipv6" {
 		// get from http header
-		ip := r.Header.Get(*xRealIP)
-
-		if x := net.ParseIP(ip); x != nil {
-			ip = x.String()
-		} else {
-			log.Fatal("proxy ip format invalid: " + ip)
+		ip = r.Header.Get(*xRealIP)
+		if ip == "" {
+			// get from connect
+			ip = getConnectIP(r)
 		}
 	}
 
-	qq := qqwry.NewQQwry()
-	location := qq.Find(ip)
-	w.WriteJson(location)
-}
-
-func GetIP(w rest.ResponseWriter, r *rest.Request) {
-	// get from connect
-	ip := getConnectIP(r)
 	if ip == "" || ip == "ipv6" {
-		// get from http header
-		ip := r.Header.Get(*xRealIP)
-
 		if x := net.ParseIP(ip); x != nil {
 			ip = x.String()
 		} else {
-			w.WriteJson(map[string]string{"error": "proxy ip format invalid, maybe blank or ipv6"})
+			w.WriteJson(map[string]string{"error": "proxy ip format invalid, maybe blank or ipv6", "ip": ip})
 			return
 		}
 	}
@@ -277,7 +260,7 @@ func main() {
 	})
 	if router, err := rest.MakeRouter(
 		rest.Get("/click", OnClick),
-		rest.Get("/ip", GetIP),
+		rest.Get("/ip", IPQuery),
 		rest.Get("/ip/#ip", IPQuery),
 		rest.Get("/host/#host", Index),
 		rest.Get("/", Index),
