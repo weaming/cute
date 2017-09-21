@@ -196,6 +196,8 @@ func IPQuery(w rest.ResponseWriter, r *rest.Request) {
 	}
 	if ip == "" || ip == "ipv6" {
 		// get from http header
+		ip := r.Header.Get(*xRealIP)
+
 		if x := net.ParseIP(ip); x != nil {
 			ip = x.String()
 		} else {
@@ -213,6 +215,8 @@ func GetIP(w rest.ResponseWriter, r *rest.Request) {
 	ip := getConnectIP(r)
 	if ip == "" || ip == "ipv6" {
 		// get from http header
+		ip := r.Header.Get(*xRealIP)
+
 		if x := net.ParseIP(ip); x != nil {
 			ip = x.String()
 		} else {
