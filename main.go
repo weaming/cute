@@ -208,6 +208,24 @@ func IPQuery(w rest.ResponseWriter, r *rest.Request) {
 	w.WriteJson(location)
 }
 
+func GetIP(w rest.ResponseWriter, r *rest.Request) {
+	// get from connect
+	ip := getConnectIP(r)
+	if ip == "" || ip == "ipv6" {
+		// get from http header
+		if x := net.ParseIP(ip); x != nil {
+			ip = x.String()
+		} else {
+			w.WriteJson(map[string]string{"error": "proxy ip format invalid, maybe blank or ipv6"})
+			return
+		}
+	}
+
+	qq := qqwry.NewQQwry()
+	location := qq.Find(ip)
+	w.WriteJson(location)
+}
+
 func Index(w rest.ResponseWriter, r *rest.Request) {
 	host := r.PathParam("host")
 	c := Pool.Get()
@@ -255,6 +273,7 @@ func main() {
 	})
 	if router, err := rest.MakeRouter(
 		rest.Get("/click", OnClick),
+		rest.Get("/ip", GetIP),
 		rest.Get("/ip/#ip", IPQuery),
 		rest.Get("/host/#host", Index),
 		rest.Get("/", Index),
