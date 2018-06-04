@@ -3,24 +3,26 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"strings"
+
 	"github.com/ant0ine/go-json-rest/rest"
 	"github.com/garyburd/redigo/redis"
 	"github.com/mssola/user_agent"
 	"github.com/weaming/cute/qqwry"
 	"gopkg.in/redsync.v1"
-	"log"
-	"net"
-	"net/http"
-	"strings"
 )
 
 var (
-	listen      = flag.String("listen", ":8080", "listen [host]:port")
-	redisServer = flag.String("redis", "127.0.0.1:6379", "redis host:port")
-	xRealIP     = flag.String("header", "X-Real-IP", "key of IP in proxy HTTP header")
-	redisDB     = flag.Int("db", 0, "redis database")
-	datFile     = flag.String("qqwry", "./qqwry.dat", "纯真 IP 库的数据文件路径")
-	Pool        = NewRedisPool(*redisServer, "", *redisDB, 20)
+	listen        = flag.String("listen", ":8080", "listen [host]:port")
+	redisServer   = flag.String("redis", "127.0.0.1:6379", "redis host:port")
+	xRealIP       = flag.String("header", "X-Real-IP", "key of IP in proxy HTTP header")
+	redisDB       = flag.Int("db", 0, "redis database")
+	redisPassword = flag.String("dbpw", "", "redis password")
+	datFile       = flag.String("qqwry", "./qqwry.dat", "纯真 IP 库的数据文件路径")
+	Pool          *redis.Pool
 )
 
 type Click struct {
@@ -240,6 +242,7 @@ func Index(w rest.ResponseWriter, r *rest.Request) {
 
 func init() {
 	flag.Parse()
+	Pool = NewRedisPool(*redisServer, *redisPassword, *redisDB, 20)
 	// load qqwry data to memory
 	qqwry.IPData.InitIPData(*datFile)
 }
